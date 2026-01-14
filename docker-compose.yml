@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: alleana-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: alleana
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: alleana-api
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: alleana
+      JWT_SECRET: z1dCxaUQF7kgByz7w+JZMaUoteKKrDPAmD46uAJVpZE=
+      JWT_EXPIRES_IN: 24h
+      JWT_REFRESH_EXPIRES_IN: 7d
+      MONNIFY_API_KEY: mock-api-key
+      MONNIFY_SECRET_KEY: mock-secret-key
+      MONNIFY_BASE_URL: https://api.monnify.com
+      MONNIFY_CONTRACT_CODE: mock-contract-code
+      PORT: 3000
+      NODE_ENV: development
+    ports:
+      - "3001:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: node dist/main
+
+volumes:
+  postgres_data:
